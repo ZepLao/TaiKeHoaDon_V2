@@ -52,8 +52,12 @@ thư mục của đúng công ty (xác định MST từ hóa đơn).
 ### Tải tự động
 
 1. Chọn **1** → cửa sổ Edge của công ty mở ra → **đăng nhập đúng tài khoản công ty đó** (tự gõ captcha).
-2. Quay lại cửa sổ đen: nhập *Từ ngày*, *Đến ngày* (dd/mm/yyyy) và loại (mua vào / bán ra / cả hai).
-3. Tool tự mở **Tra cứu hóa đơn**, chia khoảng ngày theo tháng (tối đa 30 ngày/lần) và tìm lần lượt:
+2. Ở cửa sổ đen: nhập *Từ ngày*, *Đến ngày* (dd/mm/yyyy) và loại (mua vào / bán ra / cả hai) —
+   làm trước hay sau khi đăng nhập đều được. **Không cần chuyển trang hay nhấn gì thêm**: tool tự nhận biết
+   khi bạn đăng nhập xong (cookie đăng nhập của cổng thuế), tự mở
+   `https://hoadondientu.gdt.gov.vn/tra-cuu/tra-cuu-hoa-don` rồi tải. Phiên đăng nhập cũ còn hạn thì vào
+   thẳng; hết hạn thì tool báo và chờ bạn đăng nhập lại.
+3. Tool chia khoảng ngày theo tháng (tối đa 30 ngày/lần) và tìm lần lượt:
    - **Mua vào** — 6 lần cho mỗi khoảng ngày:
 
      | Kết quả kiểm tra | Hóa đơn ủy nhiệm | Tab con |

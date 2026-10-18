@@ -35,19 +35,53 @@ async function askKinds() {
   return k === '1' ? ['mua-vao'] : k === '2' ? ['ban-ra'] : ['mua-vao', 'ban-ra'];
 }
 
+// Cổng thuế lưu phiên đăng nhập trong cookie "jwt"
+async function jwtValue(ctx) {
+  const cs = await ctx.cookies('https://hoadondientu.gdt.gov.vn').catch(() => []);
+  const c = cs.find((x) => x.name === 'jwt' && x.value);
+  return c ? c.value : null;
+}
+
+// Chờ tới khi bạn đăng nhập xong (có cookie đăng nhập, khác phiên cũ đã hết hạn nếu có)
+async function waitForLogin(ctx, log, stale) {
+  let told = false;
+  for (;;) {
+    const v = await jwtValue(ctx);
+    if (v && v !== stale) return v;
+    if (!told) {
+      log('Đang chờ bạn ĐĂNG NHẬP trên trình duyệt... (đăng nhập xong tool tự chạy tiếp, không cần nhấn gì)');
+      told = true;
+    }
+    await P.sleep(1500);
+  }
+}
+
+// Đăng nhập xong -> tự mở trang Tra cứu hóa đơn; phiên cũ hết hạn thì chờ đăng nhập lại
+async function loginAndOpenLookup(ctx, log) {
+  let stale = null;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    await waitForLogin(ctx, log, stale);
+    log('Đã đăng nhập. Đang mở trang Tra cứu hóa đơn...');
+    const page = await openLookup(ctx, log);
+    if (page) return page;
+    stale = await jwtValue(ctx);
+    log('Chưa vào được trang Tra cứu hóa đơn — có thể phiên đăng nhập cũ đã hết hạn.');
+    log('=> Hãy ĐĂNG NHẬP LẠI trên trình duyệt, tool sẽ tự thử lại.');
+  }
+  return null;
+}
+
 async function autoMode(ctx, log) {
   log('\n=== CHẾ ĐỘ TỰ ĐỘNG ===');
-  log('1. Trong cửa sổ trình duyệt vừa mở: ĐĂNG NHẬP cổng thuế (tự gõ captcha).');
-  log('2. Đăng nhập xong quay lại đây, nhập khoảng ngày và loại hóa đơn.');
-  log('   Tool tự mở Tra cứu hóa đơn, tự tìm kiếm từng nhóm (mua vào: Đã cấp mã, Không mã, Máy tính tiền;');
-  log('   bán ra: tất cả) ở cả tab "Hóa đơn điện tử" và "Máy tính tiền", rồi tải hết.\n');
+  log('- Trên cửa sổ trình duyệt vừa mở: ĐĂNG NHẬP cổng thuế (tự gõ captcha).');
+  log('- Ở cửa sổ này: nhập khoảng ngày và loại hóa đơn (làm trước hay sau khi đăng nhập đều được).');
+  log('Đăng nhập xong tool tự mở Tra cứu hóa đơn, tự tìm kiếm từng nhóm và tải hết.\n');
   for (;;) {
     const { from, to } = await askRange(log);
     const kinds = await askKinds();
-    await ask('Đã đăng nhập xong? Nhấn Enter để bắt đầu...');
-    const page = await openLookup(ctx, log);
+    const page = await loginAndOpenLookup(ctx, log);
     if (!page) {
-      log('Không mở được trang Tra cứu hóa đơn. Có thể chưa đăng nhập — hãy đăng nhập rồi thử lại.');
+      log('Không mở được trang Tra cứu hóa đơn sau nhiều lần thử. Hãy kiểm tra đăng nhập rồi chạy lại.');
     } else {
       await page.bringToFront().catch(() => {});
       try {
@@ -131,7 +165,12 @@ async function main() {
   process.exit(0); // trình duyệt do tool mở sẽ tự đóng theo
 }
 
-main().catch((e) => {
-  console.error('LỖI:', e.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((e) => {
+    console.error('LỖI:', e.message);
+    process.exit(1);
+  });
+} else {
+  rl.close();
+  module.exports = { loginAndOpenLookup, waitForLogin, jwtValue };
+}
