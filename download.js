@@ -6,7 +6,7 @@
 const path = require('path');
 const readline = require('readline');
 const P = require('./lib/portal');
-const { runAuto, openLookup, parseVN, fmt, isUyNhiemChecked } = require('./lib/auto');
+const { runAuto, openLookup, loginState, parseVN, fmt, isUyNhiemChecked } = require('./lib/auto');
 const { createLog } = require('./lib/log');
 const bangKe = require('./bang-ke');
 const company = require('./lib/company');
@@ -42,31 +42,43 @@ async function jwtValue(ctx) {
   return c ? c.value : null;
 }
 
-// Chờ tới khi bạn đăng nhập xong (có cookie đăng nhập, khác phiên cũ đã hết hạn nếu có)
-async function waitForLogin(ctx, log, stale) {
-  let told = false;
+// Chờ tới khi bạn đăng nhập xong: có cookie đăng nhập VÀ trang không còn nút "Đăng nhập" / trang 403
+// (cookie cũ hết hạn vẫn còn trong trình duyệt nên không dựa vào cookie một mình). Kiểm tra 2 lần liên tiếp.
+async function waitForLogin(ctx, log) {
+  let told = '';
+  let okTimes = 0;
   for (;;) {
+    const page = await P.currentPage(ctx);
     const v = await jwtValue(ctx);
-    if (v && v !== stale) return v;
-    if (!told) {
-      log('Đang chờ bạn ĐĂNG NHẬP trên trình duyệt... (đăng nhập xong tool tự chạy tiếp, không cần nhấn gì)');
-      told = true;
+    const st = await loginState(page);
+    const loaded = await page.evaluate(() => ((document.body && document.body.innerText) || '').length > 100).catch(() => false);
+    const ready = !!v && loaded && !st.loginBtn && !st.forbidden;
+    okTimes = ready ? okTimes + 1 : 0;
+    if (okTimes >= 2) return v;
+    const msg = v && st.loginBtn ? 'old' : 'wait';
+    if (!ready && told !== msg) {
+      log(
+        msg === 'old'
+          ? 'Phiên đăng nhập cũ đã hết hạn — hãy ĐĂNG NHẬP trên trình duyệt (đăng nhập xong tool tự chạy tiếp).'
+          : 'Đang chờ bạn ĐĂNG NHẬP trên trình duyệt... (đăng nhập xong tool tự chạy tiếp, không cần nhấn gì)',
+      );
+      told = msg;
     }
     await P.sleep(1500);
   }
 }
 
-// Đăng nhập xong -> tự mở trang Tra cứu hóa đơn; phiên cũ hết hạn thì chờ đăng nhập lại
+// Đăng nhập xong -> tự mở trang Tra cứu hóa đơn ngay trên tab đó
 async function loginAndOpenLookup(ctx, log) {
-  let stale = null;
   for (let attempt = 1; attempt <= 5; attempt++) {
-    await waitForLogin(ctx, log, stale);
+    await waitForLogin(ctx, log);
     log('Đã đăng nhập. Đang mở trang Tra cứu hóa đơn...');
     const page = await openLookup(ctx, log);
     if (page) return page;
-    stale = await jwtValue(ctx);
-    log('Chưa vào được trang Tra cứu hóa đơn — có thể phiên đăng nhập cũ đã hết hạn.');
+    log('Chưa vào được trang Tra cứu hóa đơn (cổng thuế báo không có quyền / phiên đã hết hạn).');
     log('=> Hãy ĐĂNG NHẬP LẠI trên trình duyệt, tool sẽ tự thử lại.');
+    // chờ trang hiện lại nút "Đăng nhập" (đã về trang chủ) để không thử lại ngay với phiên cũ
+    for (let t = 0; t < 10 && !(await loginState(await P.currentPage(ctx))).loginBtn; t++) await P.sleep(1000);
   }
   return null;
 }
