@@ -87,8 +87,8 @@ Mẫu định dạng bảng kê: `mau/bang_ke_mau.xlsx` (đặt file mẫu riên
 
 - Cột **Trạng thái HĐ** (mua vào: cột P, bán ra: cột S). Hóa đơn **đã bị hủy / đã bị thay thế** tô đỏ và
   **không cộng** vào dòng TỔNG CỘNG (công thức `SUMIFS`); hóa đơn điều chỉnh tô vàng; "Bất hợp pháp" tô đỏ.
-- Chạy lại: mở file mới nhất của tháng đó, chỉ thêm hóa đơn chưa có và cập nhật trạng thái, lưu thành
-  file mới. Tháng không có gì thay đổi thì không tạo file. Chỉnh sửa tay trong file được giữ lại.
+- Mỗi lần chạy luôn tạo file mới: mở file mới nhất của tháng đó, chỉ thêm hóa đơn chưa có và cập nhật trạng thái, lưu thành
+  file mới có ngày giờ (kể cả khi không có hóa đơn mới). Chỉnh sửa tay trong file được giữ lại.
 
 ### Sheet Kiểm tra
 
