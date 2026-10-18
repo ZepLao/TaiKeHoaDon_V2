@@ -152,8 +152,7 @@ async function main() {
   log(`Lưu hóa đơn vào: ${IN_DIR}`);
   log('LƯU Ý: đăng nhập đúng tài khoản của công ty này. Nếu tải ra hóa đơn của MST khác, tool sẽ dừng và không lưu.');
   const ctx = await P.launch(paths.profileDir);
-  const page = ctx.pages()[0] || (await ctx.newPage());
-  await page.goto(P.SITE).catch(() => {});
+  await P.openMainPage(ctx);
 
   if (manual) await manualMode(ctx, log);
   else await autoMode(ctx, log);
