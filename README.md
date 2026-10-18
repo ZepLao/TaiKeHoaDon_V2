@@ -30,6 +30,11 @@ Danh sách lưu trong `cong_ty.json`. Mỗi công ty có thư mục và trình d
 phải đúng MST công ty đang chọn. Sai (đăng nhập nhầm tài khoản) thì tool **dừng ngay**, file đó được
 chuyển vào `input/_khac_cong_ty/`. Khi xuất bảng kê, hóa đơn không thuộc công ty cũng bị bỏ qua và báo lại.
 
+**Xóa công ty:** ở màn hình chọn công ty, chọn **X** → chọn công ty → gõ lại MST để xác nhận:
+- *Chỉ xóa khỏi danh sách*: giữ nguyên dữ liệu; khai báo lại MST đó là dùng tiếp được.
+- *Xóa và cất dữ liệu*: chuyển hóa đơn, bảng kê, nhật ký, trình duyệt của công ty vào
+  `da_xoa/<MST>_<ngày giờ>/` (khôi phục bằng cách chép lại). Tool không xóa vĩnh viễn dữ liệu.
+
 Lần đầu mở menu, nếu còn dữ liệu kiểu cũ (`input/mua-vao`, `input/ban-ra`), tool hỏi để chuyển vào
 thư mục của đúng công ty (xác định MST từ hóa đơn).
 

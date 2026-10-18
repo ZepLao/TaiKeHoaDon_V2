@@ -114,6 +114,44 @@ async function addCompany() {
   }
 }
 
+async function deleteCompany() {
+  const list = company.list();
+  if (!list.length) return;
+  console.log('\n--- XÓA CÔNG TY ---');
+  list.forEach((c, i) => console.log(`  ${i + 1}. ${company.label(c)}`));
+  const c = list[Number(await ask('Chọn số công ty cần xóa (Enter để hủy): ')) - 1];
+  if (!c) return;
+  const s = company.stats(c.mst);
+  console.log(`\nCông ty: ${company.label(c)}`);
+  console.log(`Dữ liệu: ${s.muaVao} hóa đơn mua vào, ${s.banRa} hóa đơn bán ra, ${s.bangKe} file bảng kê`);
+  console.log('\n  1. Chỉ xóa khỏi danh sách — GIỮ NGUYÊN dữ liệu (khai báo lại MST này là dùng tiếp được)');
+  console.log('  2. Xóa khỏi danh sách và CẤT dữ liệu vào thư mục da_xoa (khôi phục được bằng cách chép lại)');
+  console.log('  0. Hủy');
+  const mode = await ask('Chọn [1]: ') || '1';
+  if (!['1', '2'].includes(mode)) return;
+  const confirm = await ask(`Gõ lại MST ${c.mst} để xác nhận xóa: `);
+  if (confirm !== c.mst) {
+    console.log('MST không khớp — đã hủy, không xóa gì.');
+    await pause();
+    return;
+  }
+  if (mode === '2') {
+    const r = company.archive(c.mst);
+    if (r.failed.length) {
+      console.log('Không chuyển được (có thể trình duyệt / Excel của công ty này đang mở):');
+      r.failed.forEach((f) => console.log(`  - ${f}`));
+      console.log('Đóng các cửa sổ đó rồi thử lại. Công ty CHƯA bị xóa khỏi danh sách.');
+      if (r.moved.length) console.log(`(Đã cất: ${r.moved.join(', ')} -> ${r.dest})`);
+      await pause();
+      return;
+    }
+    if (r.moved.length) console.log(`Đã cất dữ liệu vào: ${r.dest}`);
+  }
+  company.remove(c.mst);
+  console.log(`Đã xóa công ty ${company.label(c)} khỏi danh sách.`);
+  await pause();
+}
+
 async function chooseCompany() {
   for (;;) {
     console.clear();
@@ -126,9 +164,14 @@ async function chooseCompany() {
     if (!list.length) console.log('  (chưa có công ty nào — nhấn T để khai báo)');
     list.forEach((c, i) => console.log(`  ${i + 1}. ${company.label(c)}`));
     console.log('\n  T. Thêm công ty mới');
+    if (list.length) console.log('  X. Xóa công ty');
     console.log('  0. Thoát\n');
     const a = (await ask('Chọn: ')).toUpperCase();
     if (a === '0') return null;
+    if (a === 'X') {
+      await deleteCompany();
+      continue;
+    }
     if (a === 'T') {
       const c = await addCompany();
       if (c) return c;

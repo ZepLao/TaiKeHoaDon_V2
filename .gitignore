@@ -21,3 +21,6 @@ logs/
 # Danh sách công ty và trình duyệt riêng của từng công ty
 cong_ty.json
 .browser-profiles/
+
+# Dữ liệu của công ty đã xóa (cất lại, khôi phục được)
+da_xoa/
