@@ -6,7 +6,7 @@
 const path = require('path');
 const readline = require('readline');
 const P = require('./lib/portal');
-const { runAuto, openLookup, loginState, parseVN, fmt, isUyNhiemChecked } = require('./lib/auto');
+const { runAuto, printSummary, openLookup, loginState, parseVN, fmt, isUyNhiemChecked } = require('./lib/auto');
 const { createLog } = require('./lib/log');
 const bangKe = require('./bang-ke');
 const company = require('./lib/company');
@@ -98,8 +98,7 @@ async function autoMode(ctx, log) {
       await page.bringToFront().catch(() => {});
       try {
         const sum = await runAuto(page, { from, to, kinds, inDir: IN_DIR, ownMst: COMPANY.mst }, log);
-        const t = sum.reduce((s, r) => ({ moi: s.moi + r.count - r.failed - r.skipped, co: s.co + r.skipped, loi: s.loi + r.failed }), { moi: 0, co: 0, loi: 0 });
-        log(`\nXONG: ${t.moi} hóa đơn tải mới, ${t.co} đã có, ${t.loi} chưa tải được.`);
+        printSummary(sum, log);
       } catch (e) {
         log(`Dừng: ${e.message.split('\n')[0]}`);
         log('(Bạn có thể dùng chế độ THỦ CÔNG nếu trang thuế thay đổi giao diện.)');
@@ -141,12 +140,12 @@ async function manualMode(ctx, log) {
       kind = k.startsWith('b') ? 'ban-ra' : 'mua-vao';
     }
     const folder = path.join(IN_DIR, kind);
-    log(`Đang tải hóa đơn ${kind === 'ban-ra' ? 'BÁN RA' : 'MUA VÀO'} -> ${folder}`);
     try {
       const uyNhiem = kind === 'mua-vao' && (await isUyNhiemChecked(p));
-      if (uyNhiem) log('(Đang tick "Hóa đơn ủy nhiệm" — các hóa đơn sẽ được ghi chú ủy nhiệm)');
+      const muc = `${kind === 'ban-ra' ? 'BÁN RA' : 'MUA VÀO'}${uyNhiem ? ' (ủy nhiệm)' : ''}`;
+      log(`\n>> ĐANG TẢI: ${muc} -> ${folder}`);
       const { count, failed, skipped } = await P.downloadAll(p, folder, log, kind, { ownMst: COMPANY.mst, uyNhiem });
-      log(`Xong lượt này: ${count - failed - skipped} tải mới, ${skipped} đã có, ${failed} chưa tải được (tổng ${count} dòng)`);
+      log(`   KẾT QUẢ [${muc}]: ${count} hóa đơn -> tải mới ${count - failed - skipped}, đã có ${skipped}, chưa tải được ${failed}`);
     } catch (e) {
       log(`Dừng lượt này: ${e.message.split('\n')[0]}`);
     }
