@@ -1,0 +1,16 @@
+{
+  "name": "tool-data-hoadon",
+  "version": "1.0.0",
+  "description": "Lấy hóa đơn bán ra / mua vào từ hoadondientu.gdt.gov.vn và xuất Excel",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "exceljs": "4.4.0",
+    "fast-xml-parser": "^4.5.0",
+    "playwright-core": "^1.48.2"
+  }
+}

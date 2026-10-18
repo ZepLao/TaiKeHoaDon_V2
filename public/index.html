@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chi tiết hóa đơn</title>
+<style>
+  :root { --c: #1f4e78; --bg: #f4f6f9; --line: #d5dbe3; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Segoe UI, Arial, sans-serif; background: var(--bg); color: #222; }
+  header { background: var(--c); color: #fff; padding: 14px 24px; font-size: 18px; font-weight: 600; }
+  main { max-width: 860px; margin: 20px auto; padding: 0 16px; display: grid; gap: 16px; }
+  section { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; }
+  h2 { margin: 0 0 12px; font-size: 16px; color: var(--c); }
+  ol { margin: 0; padding-left: 20px; line-height: 1.7; font-size: 14px; }
+  code { background: #eef2f7; padding: 1px 5px; border-radius: 4px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-bottom: 12px; }
+  label { display: grid; gap: 4px; font-size: 13px; color: #555; flex: 1; min-width: 200px; }
+  input[type=text] { padding: 8px 10px; border: 1px solid var(--line); border-radius: 5px; font-size: 14px; width: 100%; }
+  button { background: var(--c); color: #fff; border: 0; border-radius: 5px; padding: 9px 18px; font-size: 14px; cursor: pointer; }
+  button.light { background: #e8edf3; color: var(--c); }
+  button:disabled { opacity: .5; cursor: default; }
+  #result { font-size: 14px; line-height: 1.7; }
+  .err { color: #c62828; }
+  .ok { color: #1a7f37; font-weight: 600; }
+  table { border-collapse: collapse; margin: 6px 0; }
+  td { padding: 2px 14px 2px 0; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<header>Xuất chi tiết hóa đơn điện tử ra Excel</header>
+<main>
+  <section>
+    <h2>1. Tải hóa đơn từ cổng thuế</h2>
+    <ol>
+      <li>Đăng nhập <b>hoadondientu.gdt.gov.vn</b> → <b>Tra cứu</b> → <b>Tra cứu hóa đơn</b>.</li>
+      <li>Chọn tab <b>Tra cứu hóa đơn điện tử mua vào</b> (hoặc <b>bán ra</b>), chọn khoảng ngày → <b>Tìm kiếm</b>.</li>
+      <li>Ở từng hóa đơn bấm nút <b>Tải về</b> (biểu tượng tải xuống) để lấy file <code>.zip</code> có chứa XML.</li>
+      <li>Bỏ tất cả file <code>.zip</code> / <code>.xml</code> vào thư mục input (có thể để lẫn bán ra và mua vào, chia thư mục con tùy ý).</li>
+    </ol>
+    <div class="row" style="margin-top:12px"><button class="light" id="btnInput">Mở thư mục input</button></div>
+  </section>
+
+  <section>
+    <h2>2. Xuất Excel</h2>
+    <div class="row">
+      <label>Thư mục chứa file hóa đơn<input type="text" id="folder"></label>
+    </div>
+    <div class="row">
+      <label>MST của doanh nghiệp (để tách bán ra / mua vào — bỏ trống thì tự nhận)<input type="text" id="mst"></label>
+    </div>
+    <div class="row">
+      <button id="btnBuild">Đọc hóa đơn &amp; xuất Excel</button>
+      <button class="light" id="btnOutput">Mở thư mục output</button>
+    </div>
+    <div id="result"></div>
+    <div class="row hidden" id="dl" style="margin-top:8px"><a href="/api/download"><button>Tải file Excel</button></a></div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+async function api(url, body) {
+  const r = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.message || r.statusText);
+  return data;
+}
+const remember = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+const recall = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+
+$('btnInput').onclick = () => api('/api/open-folder', { which: 'input' });
+$('btnOutput').onclick = () => api('/api/open-folder', { which: 'output' });
+
+$('btnBuild').onclick = async () => {
+  $('btnBuild').disabled = true;
+  $('dl').classList.add('hidden');
+  $('result').textContent = 'Đang đọc file...';
+  try {
+    remember('folder', $('folder').value); remember('mst', $('mst').value);
+    const r = await api('/api/build', { folder: $('folder').value, mst: $('mst').value });
+    let html = `<div class="ok">Đã xuất: ${esc(r.file)}</div><table>
+      <tr><td>Số file đã quét</td><td><b>${r.fileCount}</b></td></tr>
+      <tr><td>Số hóa đơn đọc được</td><td><b>${r.total}</b>${r.dup ? ` (bỏ ${r.dup} hóa đơn trùng)` : ''}</td></tr>
+      <tr><td>MST doanh nghiệp</td><td><b>${esc(r.mst || '')}</b></td></tr>
+      <tr><td>Bán ra</td><td><b>${r.sold}</b></td></tr>
+      <tr><td>Mua vào</td><td><b>${r.purchase}</b></td></tr>
+      ${r.other ? `<tr><td>Không thuộc MST trên</td><td><b>${r.other}</b> (sheet "Khac")</td></tr>` : ''}
+      <tr><td>Tổng số dòng hàng hóa</td><td><b>${r.items}</b></td></tr></table>`;
+    if (r.errors.length) html += `<div class="err">${r.errors.length} file lỗi (xem sheet "Loi doc file"):<br>${r.errors.slice(0, 10).map((e) => esc(e.file + ': ' + e.error)).join('<br>')}</div>`;
+    $('result').innerHTML = html;
+    $('dl').classList.remove('hidden');
+  } catch (e) {
+    $('result').innerHTML = `<span class="err">${esc(e.message)}</span>`;
+  } finally { $('btnBuild').disabled = false; }
+};
+
+api('/api/info').then((i) => { $('folder').value = recall('folder') || i.inputDir; });
+$('mst').value = recall('mst') || '';
+</script>
+</body>
+</html>

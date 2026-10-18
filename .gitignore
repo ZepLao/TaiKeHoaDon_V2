@@ -1,0 +1,16 @@
+node_modules/
+
+# Phiên đăng nhập cổng thuế của trình duyệt do tool mở — tuyệt đối không đưa lên
+.browser-profile/
+
+# Dữ liệu hóa đơn và kết quả xuất
+input/
+output/
+ket_qua/
+hoadon/
+
+# File tạm của Excel / hệ thống
+~$*
+*.tmp
+Thumbs.db
+.DS_Store
