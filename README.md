@@ -11,40 +11,62 @@ tool chỉ lặp lại thao tác bạn vẫn làm bằng tay (tìm kiếm → ch
 Cần Node.js 18+ và Microsoft Edge (hoặc Google Chrome). Bấm đúp **`TaiKeHoaDon.bat`** —
 lần đầu tool tự cài thư viện (`npm install`).
 
-## Menu
+## Nhiều công ty
+
+Mở `TaiKeHoaDon.bat` → **chọn công ty** trong danh sách, hoặc **T** để khai báo công ty mới
+(MST 10 số, chi nhánh 10 số-3 số; tên có thể để trống, tool tự lấy từ hóa đơn).
+Danh sách lưu trong `cong_ty.json`. Mỗi công ty có thư mục và trình duyệt riêng nên không bị lẫn:
+
+| Thư mục | Nội dung |
+|---|---|
+| `input/<MST>/mua-vao`, `input/<MST>/ban-ra` | File hóa đơn tải về: `MSTngườibán_KýhiệuMẫusốKýhiệu_Số.zip` |
+| `input/<MST>/*/_trang_thai.json` | Trạng thái hóa đơn đọc từ bảng tra cứu (hủy, thay thế, điều chỉnh, bất hợp pháp, ủy nhiệm) |
+| `ket_qua/<MST>/` | Bảng kê: `bang_ke_mua_ban_T09-2026_<ngày>_<giờ>.xlsx` |
+| `logs/<MST>/` | Nhật ký mỗi lần chạy |
+| `.browser-profiles/<MST>/` | Trình duyệt riêng của công ty (giữ phiên đăng nhập) |
+| `input/_khac_cong_ty/` | File tải về nhưng không thuộc công ty đang chọn (đăng nhập nhầm tài khoản) |
+
+**Chống lẫn dữ liệu:** mỗi file tải về được kiểm tra — mua vào thì *người mua*, bán ra thì *người bán*
+phải đúng MST công ty đang chọn. Sai (đăng nhập nhầm tài khoản) thì tool **dừng ngay**, file đó được
+chuyển vào `input/_khac_cong_ty/`. Khi xuất bảng kê, hóa đơn không thuộc công ty cũng bị bỏ qua và báo lại.
+
+Lần đầu mở menu, nếu còn dữ liệu kiểu cũ (`input/mua-vao`, `input/ban-ra`), tool hỏi để chuyển vào
+thư mục của đúng công ty (xác định MST từ hóa đơn).
+
+## Menu của công ty
 
 | Chọn | Việc |
 |---|---|
 | 1 | **Tải tự động**: nhập khoảng ngày + loại hóa đơn, tool tự tìm kiếm và tải hết |
 | 2 | **Tải thủ công**: bạn tự tìm kiếm trên trang, nhấn Enter để tool tải danh sách đang hiện |
 | 3 | Xuất bảng kê Excel từ các hóa đơn đã tải |
-| 4 | Chia file XML/zip tải tay vào đúng thư mục mua vào / bán ra |
-| 5, 6 | Mở thư mục kết quả / nhật ký |
+| 4 | Chia file XML/zip tải tay (bỏ vào `input/<MST>/`) vào đúng mua vào / bán ra |
+| 5, 6, 7 | Mở thư mục bảng kê / hóa đơn / nhật ký |
+| 9 | Đổi công ty |
 
 ### Tải tự động
 
-1. Chọn **1** → cửa sổ Edge mở ra → **đăng nhập** cổng thuế (tự gõ captcha).
+1. Chọn **1** → cửa sổ Edge của công ty mở ra → **đăng nhập đúng tài khoản công ty đó** (tự gõ captcha).
 2. Quay lại cửa sổ đen: nhập *Từ ngày*, *Đến ngày* (dd/mm/yyyy) và loại (mua vào / bán ra / cả hai).
 3. Tool tự mở **Tra cứu hóa đơn**, chia khoảng ngày theo tháng (tối đa 30 ngày/lần) và tìm lần lượt:
-   - Mua vào: *Đã cấp mã hóa đơn*, *Cục Thuế đã nhận không mã*, *Có mã khởi tạo từ máy tính tiền*
-   - Bán ra: *Tất cả*
-   - ở cả 2 tab con *Hóa đơn điện tử* và *Hóa đơn có mã khởi tạo từ máy tính tiền*, 50 dòng/trang.
+   - **Mua vào** — 6 lần cho mỗi khoảng ngày:
+
+     | Kết quả kiểm tra | Hóa đơn ủy nhiệm | Tab con |
+     |---|---|---|
+     | Đã cấp mã hóa đơn | không / **có** tick | HĐ điện tử + Máy tính tiền (có tick: chỉ HĐ điện tử) |
+     | Cục Thuế đã nhận không mã | không / **có** tick | như trên |
+     | Cục Thuế đã nhận HĐ có mã khởi tạo từ máy tính tiền | không / **có** tick | như trên |
+
+     Xong thì bỏ tick ô ủy nhiệm. Hóa đơn ủy nhiệm ghi chung sheet mua vào, cột trạng thái có "(ủy nhiệm)".
+   - **Bán ra**: *Tất cả*, ở cả 2 tab con.
+   - Chọn 50 dòng/trang khi có hơn 15 kết quả.
 4. Xong thì tool tự xuất bảng kê.
 
 Hóa đơn đã tải sẽ được bỏ qua; hóa đơn lỗi (cổng thuế quá tải, "Cassandra timeout"…) được bỏ qua và
 liệt kê cuối lượt — **chạy lại cùng khoảng ngày để tải bù**. Nếu trang thuế đổi giao diện làm chế độ
 tự động không chạy được, dùng chế độ thủ công.
 
-## Thư mục
-
-| Thư mục | Nội dung |
-|---|---|
-| `input/mua-vao`, `input/ban-ra` | File hóa đơn tải về: `MSTngườibán_KýhiệuMẫusốKýhiệu_Số.zip` |
-| `input/*/_trang_thai.json` | Trạng thái hóa đơn đọc từ bảng tra cứu (hủy, thay thế, điều chỉnh, bất hợp pháp) |
-| `input/*/_so_luong.json` | Số kết quả cổng thuế báo cho mỗi lần tìm (để đối chiếu) |
-| `ket_qua/` | Bảng kê: `bang_ke_mua_ban_T09-2026_<ngày>_<giờ>.xlsx` |
-| `logs/` | Nhật ký mỗi lần chạy |
-| `mau/bang_ke_mau.xlsx` | Mẫu định dạng bảng kê (đặt file mẫu riêng vào `hoadon/bang_ke_mua_ban.xlsx` để dùng thay) |
+Mẫu định dạng bảng kê: `mau/bang_ke_mau.xlsx` (đặt file mẫu riêng vào `hoadon/bang_ke_mua_ban.xlsx` để dùng thay).
 
 ## Bảng kê (mỗi tháng 1 file, theo ngày lập)
 
@@ -72,7 +94,9 @@ tự động không chạy được, dùng chế độ thủ công.
 
 | File | Việc |
 |---|---|
-| `download.js` | Mở trình duyệt, chế độ tự động / thủ công, rồi xuất bảng kê |
+| `menu.js` | Menu: chọn / khai báo công ty, chuyển dữ liệu kiểu cũ |
+| `lib/company.js` | Danh sách công ty, thư mục riêng của từng công ty |
+| `download.js` | Mở trình duyệt của công ty, chế độ tự động / thủ công, rồi xuất bảng kê |
 | `lib/auto.js` | Tự chọn tab, nhập ngày, chọn "Kết quả kiểm tra", Tìm kiếm, 50 dòng/trang |
 | `lib/portal.js` | Thao tác trên bảng: chọn dòng, Xuất xml, chuyển trang, nhận file về muộn |
 | `lib/reader.js` | Đọc XML hóa đơn (chuẩn TT78) từ .xml / .zip |

@@ -1,15 +1,18 @@
 // Tải hóa đơn XML từ cổng thuế bằng trình duyệt do tool mở. Bạn tự đăng nhập (gõ captcha);
 // tool lặp lại thao tác chọn hóa đơn -> "Xuất xml", rồi xuất bảng kê.
-//   node download.js          -> TỰ ĐỘNG: nhập khoảng ngày, tool tự tìm kiếm mọi nhóm
-//   node download.js manual   -> THỦ CÔNG: bạn tự tìm kiếm trên trang, nhấn Enter để tải
+//   node download.js --mst=<MST>          -> TỰ ĐỘNG: nhập khoảng ngày, tool tự tìm kiếm mọi nhóm
+//   node download.js --mst=<MST> manual   -> THỦ CÔNG: bạn tự tìm kiếm trên trang, nhấn Enter để tải
+// Mỗi công ty có thư mục và trình duyệt riêng (xem lib/company.js); chạy qua menu TaiKeHoaDon.bat.
 const path = require('path');
 const readline = require('readline');
 const P = require('./lib/portal');
-const { runAuto, openLookup, parseVN, fmt } = require('./lib/auto');
+const { runAuto, openLookup, parseVN, fmt, isUyNhiemChecked } = require('./lib/auto');
 const { createLog } = require('./lib/log');
 const bangKe = require('./bang-ke');
+const company = require('./lib/company');
 
-const IN_DIR = path.join(__dirname, 'input');
+let COMPANY;
+let IN_DIR;
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const ask = (q) => new Promise((r) => rl.question(q, r));
 
@@ -48,7 +51,7 @@ async function autoMode(ctx, log) {
     } else {
       await page.bringToFront().catch(() => {});
       try {
-        const sum = await runAuto(page, { from, to, kinds, inDir: IN_DIR }, log);
+        const sum = await runAuto(page, { from, to, kinds, inDir: IN_DIR, ownMst: COMPANY.mst }, log);
         const t = sum.reduce((s, r) => ({ moi: s.moi + r.count - r.failed - r.skipped, co: s.co + r.skipped, loi: s.loi + r.failed }), { moi: 0, co: 0, loi: 0 });
         log(`\nXONG: ${t.moi} hóa đơn tải mới, ${t.co} đã có, ${t.loi} chưa tải được.`);
       } catch (e) {
@@ -94,7 +97,9 @@ async function manualMode(ctx, log) {
     const folder = path.join(IN_DIR, kind);
     log(`Đang tải hóa đơn ${kind === 'ban-ra' ? 'BÁN RA' : 'MUA VÀO'} -> ${folder}`);
     try {
-      const { count, failed, skipped } = await P.downloadAll(p, folder, log, kind);
+      const uyNhiem = kind === 'mua-vao' && (await isUyNhiemChecked(p));
+      if (uyNhiem) log('(Đang tick "Hóa đơn ủy nhiệm" — các hóa đơn sẽ được ghi chú ủy nhiệm)');
+      const { count, failed, skipped } = await P.downloadAll(p, folder, log, kind, { ownMst: COMPANY.mst, uyNhiem });
       log(`Xong lượt này: ${count - failed - skipped} tải mới, ${skipped} đã có, ${failed} chưa tải được (tổng ${count} dòng)`);
     } catch (e) {
       log(`Dừng lượt này: ${e.message.split('\n')[0]}`);
@@ -104,8 +109,15 @@ async function manualMode(ctx, log) {
 
 async function main() {
   const manual = process.argv.includes('manual');
-  const log = createLog(manual ? 'tai-thu-cong' : 'tai-tu-dong');
-  const ctx = await P.launch();
+  COMPANY = company.fromArgs();
+  if (!COMPANY) throw new Error('Chưa chọn công ty. Hãy chạy qua menu TaiKeHoaDon.bat.');
+  const paths = company.paths(COMPANY.mst);
+  IN_DIR = paths.inDir;
+  const log = createLog(manual ? 'tai-thu-cong' : 'tai-tu-dong', paths.logDir);
+  log(`CÔNG TY: ${company.label(COMPANY)}`);
+  log(`Lưu hóa đơn vào: ${IN_DIR}`);
+  log('LƯU Ý: đăng nhập đúng tài khoản của công ty này. Nếu tải ra hóa đơn của MST khác, tool sẽ dừng và không lưu.');
+  const ctx = await P.launch(paths.profileDir);
   const page = ctx.pages()[0] || (await ctx.newPage());
   await page.goto(P.SITE).catch(() => {});
 
@@ -113,7 +125,7 @@ async function main() {
   else await autoMode(ctx, log);
 
   log('\nĐang xuất bảng kê...');
-  await bangKe.run(log).catch((e) => log(`LỖI xuất bảng kê: ${e.message}`));
+  await bangKe.run(log, COMPANY).catch((e) => log(`LỖI xuất bảng kê: ${e.message}`));
   log(`\nNhật ký: ${log.file}`);
   rl.close();
   process.exit(0); // trình duyệt do tool mở sẽ tự đóng theo

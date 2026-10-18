@@ -1,18 +1,29 @@
-// Sắp xếp các file hóa đơn trong input/ vào input/ban-ra và input/mua-vao dựa vào nội dung XML.
-// File trùng (cùng 1 hóa đơn) chuyển vào input/_trung, file không đọc được để nguyên.
+// Sắp xếp file hóa đơn tải tay của 1 công ty: bỏ file .xml/.zip vào input/<MST>/ (để lẫn cũng được),
+// tool đọc XML rồi chuyển vào input/<MST>/ban-ra hoặc input/<MST>/mua-vao.
+// File trùng chuyển vào input/<MST>/_trung; file không thuộc công ty / không đọc được thì để nguyên.
+//   node sap-xep.js --mst=<MST>
 const fs = require('fs');
 const path = require('path');
-const { readFolder, readFile, guessOwnMst } = require('./lib/reader');
+const { readFile } = require('./lib/reader');
+const company = require('./lib/company');
 
-const IN_DIR = path.join(__dirname, 'input');
 const KIND_DIRS = ['ban-ra', 'mua-vao'];
-
-const mst = process.argv[2] || guessOwnMst(readFolder(IN_DIR).invoices);
-if (!mst) {
-  console.log('Không có hóa đơn nào trong thư mục input.');
-  process.exit(0);
+let comp;
+try {
+  comp = company.fromArgs();
+} catch (e) {
+  console.log(`LỖI: ${e.message}`);
+  process.exit(1);
 }
-console.log(`MST doanh nghiệp: ${mst}`);
+if (!comp) {
+  console.log('Chưa chọn công ty. Hãy chạy qua menu TaiKeHoaDon.bat.');
+  process.exit(1);
+}
+const mst = comp.mst;
+const IN_DIR = company.paths(mst).inDir;
+fs.mkdirSync(IN_DIR, { recursive: true });
+console.log(`Công ty: ${company.label(comp)}`);
+console.log(`Thư mục: ${IN_DIR}`);
 
 function listFiles(dir, out = []) {
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {

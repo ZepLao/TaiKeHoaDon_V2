@@ -17,3 +17,7 @@ Thumbs.db
 
 # Nhật ký chạy tool
 logs/
+
+# Danh sách công ty và trình duyệt riêng của từng công ty
+cong_ty.json
+.browser-profiles/
