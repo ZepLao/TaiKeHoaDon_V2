@@ -58,20 +58,23 @@ thư mục của đúng công ty (xác định MST từ hóa đơn).
    `https://hoadondientu.gdt.gov.vn/tra-cuu/tra-cuu-hoa-don` rồi tải. Phiên đăng nhập cũ còn hạn thì vào
    thẳng; hết hạn thì tool báo và chờ bạn đăng nhập lại.
 3. Tool chia khoảng ngày theo tháng (tối đa 30 ngày/lần) và tìm lần lượt:
-   - **Mua vào** — 6 lần cho mỗi khoảng ngày:
+   - **Mua vào** — mỗi khoảng ngày, mỗi dòng dưới đây: chọn "Kết quả kiểm tra" → nhập ngày → mở đúng tab con → **Tìm kiếm** → tải:
 
      | Kết quả kiểm tra | Hóa đơn ủy nhiệm | Tab con |
      |---|---|---|
-     | Đã cấp mã hóa đơn | không / **có** tick | HĐ điện tử + Máy tính tiền (có tick: chỉ HĐ điện tử) |
-     | Cục Thuế đã nhận không mã | không / **có** tick | như trên |
-     | Cục Thuế đã nhận HĐ có mã khởi tạo từ máy tính tiền | không / **có** tick | như trên |
+     | Đã cấp mã hóa đơn | không tick | Hóa đơn điện tử |
+     | Cục Thuế đã nhận không mã | không tick | Hóa đơn điện tử |
+     | Cục Thuế đã nhận HĐ có mã khởi tạo từ máy tính tiền | không tick | Hóa đơn có mã khởi tạo từ máy tính tiền |
+     | Đã cấp mã hóa đơn | **tick** | Hóa đơn điện tử |
+     | Cục Thuế đã nhận không mã | **tick** | Hóa đơn điện tử |
 
      Xong thì bỏ tick ô ủy nhiệm. Hóa đơn ủy nhiệm ghi chung sheet mua vào, cột trạng thái có "(ủy nhiệm)".
-   - **Bán ra**: *Tất cả*, ở cả 2 tab con.
+   - **Bán ra**: để mặc định (Tất cả), chỉ nhập ngày → Tìm kiếm → tải, ở cả 2 tab con.
+   - Cổng thuế chỉ làm mới **tab con đang mở** khi bấm Tìm kiếm, nên tool luôn mở tab trước rồi mới tìm.
    - Chọn 50 dòng/trang khi có hơn 15 kết quả.
 4. Xong thì tool tự xuất bảng kê.
 
-Hóa đơn đã tải sẽ được bỏ qua; hóa đơn lỗi (cổng thuế quá tải, "Cassandra timeout"…) được bỏ qua và
+Hóa đơn **đã có file trong thư mục** sẽ được bỏ qua (tool kiểm tra file thật trên đĩa — xóa file thì lần sau tool tải lại); hóa đơn lỗi (cổng thuế quá tải, "Cassandra timeout"…) được bỏ qua và
 liệt kê cuối lượt — **chạy lại cùng khoảng ngày để tải bù**. Nếu trang thuế đổi giao diện làm chế độ
 tự động không chạy được, dùng chế độ thủ công.
 
