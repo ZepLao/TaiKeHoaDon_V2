@@ -1,11 +1,14 @@
 {
-  "name": "tool-data-hoadon",
+  "name": "tai-ke-hoa-don",
   "version": "1.0.0",
-  "description": "Lấy hóa đơn bán ra / mua vào từ hoadondientu.gdt.gov.vn và xuất Excel",
-  "main": "server.js",
+  "description": "TaiKeHoaDon: tải hóa đơn điện tử (hoadondientu.gdt.gov.vn) và xuất bảng kê mua vào / bán ra ra Excel",
+  "main": "download.js",
   "private": true,
   "scripts": {
-    "start": "node server.js"
+    "tai": "node download.js",
+    "tai-thu-cong": "node download.js manual",
+    "bang-ke": "node bang-ke.js",
+    "sap-xep": "node sap-xep.js"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",

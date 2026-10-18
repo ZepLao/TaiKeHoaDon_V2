@@ -1,58 +1,81 @@
-# Tool xuất chi tiết hóa đơn điện tử ra Excel
+# TaiKeHoaDon
 
-Đọc file hóa đơn XML (chuẩn TT78) tải từ hoadondientu.gdt.gov.vn và xuất ra Excel đầy đủ chi tiết.
-Tool không đăng nhập hay gọi cổng thuế — bạn tự tải file, tool chỉ xử lý file trên máy.
+Tải hóa đơn điện tử từ **hoadondientu.gdt.gov.vn** (mua vào và bán ra) và xuất **bảng kê Excel theo tháng**,
+có kiểm tra trạng thái hóa đơn, tổng hợp thuế suất và cảnh báo.
 
-## Tải tự động hàng trăm hóa đơn (khuyên dùng)
+Tool không lưu mật khẩu, không vượt captcha: bạn tự đăng nhập trong cửa sổ trình duyệt do tool mở;
+tool chỉ lặp lại thao tác bạn vẫn làm bằng tay (tìm kiếm → chọn hóa đơn → **Xuất xml**).
 
-1. Bấm đúp `tai-hoa-don.bat` → mở cửa sổ Edge riêng của tool.
-2. Trong cửa sổ đó: đăng nhập, vào **Tra cứu → Tra cứu hóa đơn**, chọn tab, khoảng ngày → **Tìm kiếm**.
-3. Quay lại cửa sổ đen, nhấn **Enter** → tool lần lượt chọn từng hóa đơn và bấm **Xuất xml**, tự sang trang.
-4. Muốn tải tab khác (bán ra / mua vào / máy tính tiền) thì tìm kiếm tab đó rồi nhấn Enter lần nữa.
-5. Gõ **q** + Enter để kết thúc → tool tự xuất file Excel vào `output/`.
+## Cài đặt
 
-File tải về được lưu riêng theo loại (tool tự nhận biết theo tab đang mở):
+Cần Node.js 18+ và Microsoft Edge (hoặc Google Chrome). Bấm đúp **`TaiKeHoaDon.bat`** —
+lần đầu tool tự cài thư viện (`npm install`).
 
-- `input/mua-vao/` — hóa đơn mua vào
-- `input/ban-ra/` — hóa đơn bán ra
+## Menu
 
-Tên file: `MSTngườibán_KýhiệuMẫusốKýhiệu_Số.zip`. Hóa đơn đã có sẽ được bỏ qua, nên chạy lại
-cùng khoảng ngày chỉ tải thêm hóa đơn mới. Tốc độ khoảng 1–2 giây/hóa đơn.
-Đừng thao tác trên cửa sổ trình duyệt trong lúc tool đang tải.
+| Chọn | Việc |
+|---|---|
+| 1 | **Tải tự động**: nhập khoảng ngày + loại hóa đơn, tool tự tìm kiếm và tải hết |
+| 2 | **Tải thủ công**: bạn tự tìm kiếm trên trang, nhấn Enter để tool tải danh sách đang hiện |
+| 3 | Xuất bảng kê Excel từ các hóa đơn đã tải |
+| 4 | Chia file XML/zip tải tay vào đúng thư mục mua vào / bán ra |
+| 5, 6 | Mở thư mục kết quả / nhật ký |
 
-Có file tải tay để lẫn lộn trong `input/`? Chạy `node sap-xep.js` để tự chia vào 2 thư mục trên
-(file trùng chuyển vào `input/_trung`, tool không đọc thư mục bắt đầu bằng `_`).
+### Tải tự động
 
-## Bảng kê theo mẫu (`hoadon/bang_ke_mua_ban.xlsx`)
+1. Chọn **1** → cửa sổ Edge mở ra → **đăng nhập** cổng thuế (tự gõ captcha).
+2. Quay lại cửa sổ đen: nhập *Từ ngày*, *Đến ngày* (dd/mm/yyyy) và loại (mua vào / bán ra / cả hai).
+3. Tool tự mở **Tra cứu hóa đơn**, chia khoảng ngày theo tháng (tối đa 30 ngày/lần) và tìm lần lượt:
+   - Mua vào: *Đã cấp mã hóa đơn*, *Cục Thuế đã nhận không mã*, *Có mã khởi tạo từ máy tính tiền*
+   - Bán ra: *Tất cả*
+   - ở cả 2 tab con *Hóa đơn điện tử* và *Hóa đơn có mã khởi tạo từ máy tính tiền*, 50 dòng/trang.
+4. Xong thì tool tự xuất bảng kê.
 
-Tự chạy khi kết thúc tải (gõ q), hoặc bấm đúp `xuat-bang-ke.bat`.
+Hóa đơn đã tải sẽ được bỏ qua; hóa đơn lỗi (cổng thuế quá tải, "Cassandra timeout"…) được bỏ qua và
+liệt kê cuối lượt — **chạy lại cùng khoảng ngày để tải bù**. Nếu trang thuế đổi giao diện làm chế độ
+tự động không chạy được, dùng chế độ thủ công.
 
-**Mỗi tháng 1 file riêng** (theo **ngày lập** hóa đơn), chỉ chứa dữ liệu của tháng đó:
+## Thư mục
 
-- Sheet tháng (vd `T09`) và `Total`: hóa đơn mua vào của tháng (`input/mua-vao`).
-- Sheet `Bán ra`: hóa đơn bán ra của tháng (`input/ban-ra`), giữ công thức cột M, Q, R như mẫu.
-- Mỗi dòng hàng hóa là 1 dòng; cuối sheet có dòng TỔNG CỘNG.
-- Tên file: `ket_qua/bang_ke_mua_ban_T09-2026_<năm-tháng-ngày>_<giờ>.xlsx`.
-- Chạy lại sau khi tải thêm: mở file mới nhất **của tháng đó**, chỉ thêm hóa đơn chưa có
-  (so theo ký hiệu + số + MST người bán), lưu thành file mới. Tháng không có hóa đơn mới thì không tạo file.
-- Định dạng lấy từ `hoadon/bang_ke_mua_ban.xlsx` nếu có, không thì từ `mau/bang_ke_mau.xlsx`.
+| Thư mục | Nội dung |
+|---|---|
+| `input/mua-vao`, `input/ban-ra` | File hóa đơn tải về: `MSTngườibán_KýhiệuMẫusốKýhiệu_Số.zip` |
+| `input/*/_trang_thai.json` | Trạng thái hóa đơn đọc từ bảng tra cứu (hủy, thay thế, điều chỉnh, bất hợp pháp) |
+| `input/*/_so_luong.json` | Số kết quả cổng thuế báo cho mỗi lần tìm (để đối chiếu) |
+| `ket_qua/` | Bảng kê: `bang_ke_mua_ban_T09-2026_<ngày>_<giờ>.xlsx` |
+| `logs/` | Nhật ký mỗi lần chạy |
+| `mau/bang_ke_mau.xlsx` | Mẫu định dạng bảng kê (đặt file mẫu riêng vào `hoadon/bang_ke_mua_ban.xlsx` để dùng thay) |
 
-## Cách dùng thủ công
-
-1. Đăng nhập cổng thuế → **Tra cứu → Tra cứu hóa đơn** → tab *mua vào* hoặc *bán ra* → Tìm kiếm →
-   bấm **Tải về** ở từng hóa đơn (file `.zip` chứa XML).
-2. Bỏ các file `.zip` / `.xml` vào thư mục `input/` (để lẫn bán ra / mua vào, chia thư mục con thoải mái).
-3. Bấm đúp `start.bat` → trang `http://localhost:3456` tự mở → **Đọc hóa đơn & xuất Excel**.
-4. File Excel nằm trong `output/`, mỗi lần chạy 1 file mới.
-
-Tool tự nhận MST doanh nghiệp (MST xuất hiện nhiều nhất); có thể nhập tay. Hóa đơn có người bán = MST
-đó là **bán ra**, người mua = MST đó là **mua vào**. Hóa đơn tải trùng tự bỏ qua.
-
-## Nội dung Excel (cho mỗi nhóm Bán ra / Mua vào)
+## Bảng kê (mỗi tháng 1 file, theo ngày lập)
 
 | Sheet | Nội dung |
 |---|---|
-| `Danh sach` | Mỗi hóa đơn 1 dòng: ký hiệu, số, ngày lập, ngày ký, mã CQT, người bán / người mua (MST, tên, địa chỉ, SĐT, email, STK, ngân hàng), HTTT, tiền tệ, tổng tiền chưa thuế / thuế / chiết khấu / phí / thanh toán, bằng chữ, thông tin khác, tên file |
-| `Chi tiet hang hoa` | Mỗi dòng hàng 1 dòng: tính chất, mã hàng, tên, ĐVT, số lượng, đơn giá, chiết khấu, thành tiền, thuế suất |
-| `Theo thue suat` | Tiền hàng / tiền thuế theo từng mức thuế suất của mỗi hóa đơn |
-| `Loi doc file` | File không đọc được (nếu có) |
+| `T09` (tháng) và `Total` | Hóa đơn mua vào của tháng, mỗi dòng hàng hóa 1 dòng |
+| `Bán ra` | Hóa đơn bán ra của tháng (giữ công thức cột M, Q, R như mẫu) |
+| `Kiểm tra` | Đối chiếu số lượng, tổng hợp theo thuế suất, cảnh báo |
+
+- Cột **Trạng thái HĐ** (mua vào: cột P, bán ra: cột S). Hóa đơn **đã bị hủy / đã bị thay thế** tô đỏ và
+  **không cộng** vào dòng TỔNG CỘNG (công thức `SUMIFS`); hóa đơn điều chỉnh tô vàng; "Bất hợp pháp" tô đỏ.
+- Chạy lại: mở file mới nhất của tháng đó, chỉ thêm hóa đơn chưa có và cập nhật trạng thái, lưu thành
+  file mới. Tháng không có gì thay đổi thì không tạo file. Chỉnh sửa tay trong file được giữ lại.
+
+### Sheet Kiểm tra
+
+1. **Số lượng**: cổng thuế báo / đã có file / chưa tải được (chỉ có số cổng thuế khi tải tự động).
+2. **Tổng hợp theo thuế suất** (0%, 5%, 8%, 10%, KCT…): tiền hàng, tiền thuế mua vào và bán ra —
+   không tính hóa đơn đã hủy / bị thay thế — để đối chiếu với tờ khai 01/GTGT.
+3. **Cảnh báo**: hóa đơn hủy / thay thế / điều chỉnh, hóa đơn bị đánh dấu *Bất hợp pháp*, hóa đơn mua vào
+   từ **5 triệu đồng** thanh toán tiền mặt (Luật Thuế GTGT 2024 — đổi `CASH_LIMIT` trong `lib/bangke.js`
+   nếu quy định thay đổi), hóa đơn có trên cổng thuế nhưng chưa tải được.
+
+## Code
+
+| File | Việc |
+|---|---|
+| `download.js` | Mở trình duyệt, chế độ tự động / thủ công, rồi xuất bảng kê |
+| `lib/auto.js` | Tự chọn tab, nhập ngày, chọn "Kết quả kiểm tra", Tìm kiếm, 50 dòng/trang |
+| `lib/portal.js` | Thao tác trên bảng: chọn dòng, Xuất xml, chuyển trang, nhận file về muộn |
+| `lib/reader.js` | Đọc XML hóa đơn (chuẩn TT78) từ .xml / .zip |
+| `lib/status.js` | Lưu / tra trạng thái hóa đơn |
+| `lib/bangke.js`, `bang-ke.js` | Xuất bảng kê theo mẫu + sheet Kiểm tra |
+| `sap-xep.js` | Chia file tải tay vào `mua-vao` / `ban-ra` |
