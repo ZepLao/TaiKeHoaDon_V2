@@ -8,7 +8,7 @@ tool chỉ lặp lại thao tác bạn vẫn làm bằng tay (tìm kiếm → ch
 
 ## Cài đặt
 
-Cần Node.js 18+ và Microsoft Edge (hoặc Google Chrome). Bấm đúp **`TaiKeHoaDon.bat`** —
+Cần Node.js 18+ và Google Chrome (không có Chrome thì dùng Microsoft Edge). Bấm đúp **`TaiKeHoaDon.bat`** —
 lần đầu tool tự cài thư viện (`npm install`).
 
 ## Nhiều công ty
@@ -51,7 +51,7 @@ thư mục của đúng công ty (xác định MST từ hóa đơn).
 
 ### Tải tự động
 
-1. Chọn **1** → cửa sổ Edge của công ty mở ra → **đăng nhập đúng tài khoản công ty đó** (tự gõ captcha).
+1. Chọn **1** → cửa sổ Chrome của công ty mở ra → **đăng nhập đúng tài khoản công ty đó** (tự gõ captcha).
 2. Ở cửa sổ đen: nhập *Từ ngày*, *Đến ngày* (dd/mm/yyyy) và loại (mua vào / bán ra / cả hai) —
    làm trước hay sau khi đăng nhập đều được. **Không cần chuyển trang hay nhấn gì thêm**: tool tự nhận biết
    khi bạn đăng nhập xong (cookie đăng nhập của cổng thuế), tự mở
@@ -64,12 +64,12 @@ thư mục của đúng công ty (xác định MST từ hóa đơn).
      |---|---|---|
      | Đã cấp mã hóa đơn | không tick | Hóa đơn điện tử |
      | Cục Thuế đã nhận không mã | không tick | Hóa đơn điện tử |
-     | Cục Thuế đã nhận HĐ có mã khởi tạo từ máy tính tiền | không tick | Hóa đơn có mã khởi tạo từ máy tính tiền |
      | Đã cấp mã hóa đơn | **tick** | Hóa đơn điện tử |
      | Cục Thuế đã nhận không mã | **tick** | Hóa đơn điện tử |
 
      Xong thì bỏ tick ô ủy nhiệm. Hóa đơn ủy nhiệm ghi chung sheet mua vào, cột trạng thái có "(ủy nhiệm)".
-   - **Bán ra**: để mặc định (Tất cả), chỉ nhập ngày → Tìm kiếm → tải, ở cả 2 tab con.
+   - **Bán ra**: để mặc định (Tất cả), chỉ nhập ngày → Tìm kiếm → tải tab Hóa đơn điện tử (bỏ qua tab Máy tính tiền để tránh treo; tải tay bằng chế độ thủ công nếu cần).
+     *(Lưu ý: phần Hóa đơn máy tính tiền được bỏ qua hoàn toàn ở chế độ tự động; bạn dùng chế độ thủ công mục 2 để tải tay nếu cần).*
    - Cổng thuế chỉ làm mới **tab con đang mở** khi bấm Tìm kiếm, nên tool luôn mở tab trước rồi mới tìm.
    - Chọn 50 dòng/trang khi có hơn 15 kết quả.
 4. Xong thì tool tự xuất bảng kê.

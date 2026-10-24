@@ -6,7 +6,7 @@
 const path = require('path');
 const readline = require('readline');
 const P = require('./lib/portal');
-const { runAuto, printSummary, openLookup, loginState, parseVN, fmt, isUyNhiemChecked } = require('./lib/auto');
+const { runAuto, printSummary, failedEntries, printFailed, openLookup, loginState, parseVN, fmt, isUyNhiemChecked } = require('./lib/auto');
 const { createLog } = require('./lib/log');
 const bangKe = require('./bang-ke');
 const company = require('./lib/company');
@@ -87,7 +87,8 @@ async function autoMode(ctx, log) {
   log('\n=== CHẾ ĐỘ TỰ ĐỘNG ===');
   log('- Trên cửa sổ trình duyệt vừa mở: ĐĂNG NHẬP cổng thuế (tự gõ captcha).');
   log('- Ở cửa sổ này: nhập khoảng ngày và loại hóa đơn (làm trước hay sau khi đăng nhập đều được).');
-  log('Đăng nhập xong tool tự mở Tra cứu hóa đơn, tự tìm kiếm từng nhóm và tải hết.\n');
+  log('Đăng nhập xong tool tự mở Tra cứu hóa đơn, tự tìm kiếm từng nhóm và tải hết.');
+  log('(Lưu ý: Hóa đơn máy tính tiền được bỏ qua để tránh treo — bạn tải tay bằng chế độ thủ công nếu cần).\n');
   for (;;) {
     const { from, to } = await askRange(log);
     const kinds = await askKinds();
@@ -96,13 +97,15 @@ async function autoMode(ctx, log) {
       log('Không mở được trang Tra cứu hóa đơn sau nhiều lần thử. Hãy kiểm tra đăng nhập rồi chạy lại.');
     } else {
       await page.bringToFront().catch(() => {});
+      const sum = []; // runAuto ghi dần vào đây -> lượt bị dừng giữa chừng vẫn in được kết quả các mục đã tải
       try {
-        const sum = await runAuto(page, { from, to, kinds, inDir: IN_DIR, ownMst: COMPANY.mst }, log);
-        printSummary(sum, log);
+        await runAuto(page, { from, to, kinds, inDir: IN_DIR, ownMst: COMPANY.mst, summary: sum }, log);
       } catch (e) {
         log(`Dừng: ${e.message.split('\n')[0]}`);
         log('(Bạn có thể dùng chế độ THỦ CÔNG nếu trang thuế thay đổi giao diện.)');
       }
+      printSummary(sum, log);
+      printFailed(failedEntries(sum, COMPANY.mst), log);
     }
     const again = (await ask('\nTải thêm khoảng ngày khác? (c = có, Enter = kết thúc và xuất bảng kê): ')).trim().toLowerCase();
     if (again !== 'c') return;
@@ -115,15 +118,19 @@ async function manualMode(ctx, log) {
   log('2. Vào Tra cứu > Tra cứu hóa đơn, chọn tab Mua vào hoặc Bán ra (và tab con nếu có),');
   log('   chọn khoảng ngày, bấm Tìm kiếm cho tới khi bảng hiện danh sách hóa đơn.');
   log('3. Quay lại cửa sổ này và nhấn Enter để tool tự tải từng hóa đơn.\n');
+  const sum = []; // các lượt đã tải, cuối cùng in danh sách hóa đơn chưa tải được
+  const finish = () => {
+    if (sum.length) printFailed(failedEntries(sum, COMPANY.mst), log);
+  };
   for (let round = 1; ; round++) {
     const ans = (await ask(round === 1 ? 'Nhấn Enter để bắt đầu tải (q = thoát): ' : '\nTải tiếp tab/khoảng ngày khác: tìm kiếm trên trình duyệt rồi nhấn Enter (q = kết thúc và xuất bảng kê): ')).trim().toLowerCase();
-    if (ans === 'q') return;
+    if (ans === 'q') return finish();
     let found;
     try {
       found = await P.findWorkPage(ctx, log);
     } catch {
       log('Trình duyệt đã bị đóng. Hãy chạy lại tool.');
-      return;
+      return finish();
     }
     if (!found || !found.st.shownRows) {
       log('Chưa thấy bảng danh sách hóa đơn trên trình duyệt.');
@@ -144,8 +151,13 @@ async function manualMode(ctx, log) {
       const uyNhiem = kind === 'mua-vao' && (await isUyNhiemChecked(p));
       const muc = `${kind === 'ban-ra' ? 'BÁN RA' : 'MUA VÀO'}${uyNhiem ? ' (ủy nhiệm)' : ''}`;
       log(`\n>> ĐANG TẢI: ${muc} -> ${folder}`);
-      const { count, failed, skipped } = await P.downloadAll(p, folder, log, kind, { ownMst: COMPANY.mst, uyNhiem });
-      log(`   KẾT QUẢ [${muc}]: ${count} hóa đơn -> tải mới ${count - failed - skipped}, đã có ${skipped}, chưa tải được ${failed}`);
+      const r = await P.downloadAll(p, folder, log, kind, { ownMst: COMPANY.mst, uyNhiem });
+      const { count, failed, skipped } = r;
+      sum.push({ kind, nhom: `Lượt ${round} (thủ công)`, tab: '', ...r });
+      log(`   KẾT QUẢ [${muc}]: ${count} hóa đơn -> tải mới ${count - failed - r.noXml - skipped}, đã có ${skipped}, không có file gốc ${r.noXml}, chưa tải được ${failed}`);
+      if (r.failedList?.length || r.noXmlList?.length) {
+        printFailed(failedEntries([{ kind, nhom: `Lượt ${round} (thủ công)`, tab: '', ...r }], COMPANY.mst), log);
+      }
     } catch (e) {
       log(`Dừng lượt này: ${e.message.split('\n')[0]}`);
     }

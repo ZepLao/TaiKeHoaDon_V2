@@ -54,9 +54,10 @@ async function run(log = console.log, comp = company.fromArgs()) {
 
   const kinds = ['mua-vao', 'ban-ra'];
   const statusMaps = Object.fromEntries(kinds.map((k) => [k, status.load(path.join(IN_DIR, k))]));
+  const noXmlMaps = Object.fromEntries(kinds.map((k) => [k, readJson(path.join(IN_DIR, k, '_khong_co_xml.json'))]));
   const counts = Object.fromEntries(kinds.map((k) => [k, readJson(path.join(IN_DIR, k, '_so_luong.json'))]));
   if (!TEMPLATE) throw new Error('Không thấy file mẫu (hoadon/bang_ke_mua_ban.xlsx hoặc mau/bang_ke_mau.xlsx)');
-  return buildBangKe({ purchase, sold, templateFile: TEMPLATE, outDir: OUT_DIR, log, statusMaps, counts });
+  return buildBangKe({ purchase, sold, templateFile: TEMPLATE, outDir: OUT_DIR, log, statusMaps, noXmlMaps, counts });
 }
 
 if (require.main === module) {
