@@ -31,8 +31,15 @@ async function askRange(log) {
 }
 
 async function askKinds() {
-  const k = (await ask('Tải loại nào? 1 = Mua vào, 2 = Bán ra, 3 = Cả hai [3]: ')).trim();
-  return k === '1' ? ['mua-vao'] : k === '2' ? ['ban-ra'] : ['mua-vao', 'ban-ra'];
+  for (;;) {
+    const k = (await ask('Tải loại nào? 1 = Mua vào, 2 = Bán ra, 3 = Cả hai, 4 = Bán ra (Máy tính tiền), 5 = Mua vào (Máy tính tiền): ')).trim();
+    if (k === '1') return ['mua-vao'];
+    if (k === '2') return ['ban-ra'];
+    if (k === '3' || k === '') return ['mua-vao', 'ban-ra'];
+    if (k === '4') return ['ban-ra-mtt'];
+    if (k === '5') return ['mua-vao-mtt'];
+    console.log('Lựa chọn không hợp lệ, hãy nhập số từ 1 đến 5 (hoặc nhấn Enter để chọn 3 = Cả hai).');
+  }
 }
 
 // Cổng thuế lưu phiên đăng nhập trong cookie "jwt"
@@ -88,7 +95,7 @@ async function autoMode(ctx, log) {
   log('- Trên cửa sổ trình duyệt vừa mở: ĐĂNG NHẬP cổng thuế (tự gõ captcha).');
   log('- Ở cửa sổ này: nhập khoảng ngày và loại hóa đơn (làm trước hay sau khi đăng nhập đều được).');
   log('Đăng nhập xong tool tự mở Tra cứu hóa đơn, tự tìm kiếm từng nhóm và tải hết.');
-  log('(Lưu ý: Hóa đơn máy tính tiền được bỏ qua để tránh treo — bạn tải tay bằng chế độ thủ công nếu cần).\n');
+  log('(Lưu ý: Hóa đơn máy tính tiền được bỏ qua ở mục 1, 2 và 3 — chọn mục 4 để tải máy tính tiền bán ra, mục 5 để tải máy tính tiền mua vào).\n');
   for (;;) {
     const { from, to } = await askRange(log);
     const kinds = await askKinds();

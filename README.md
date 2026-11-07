@@ -64,12 +64,9 @@ thư mục của đúng công ty (xác định MST từ hóa đơn).
      |---|---|---|
      | Đã cấp mã hóa đơn | không tick | Hóa đơn điện tử |
      | Cục Thuế đã nhận không mã | không tick | Hóa đơn điện tử |
-     | Đã cấp mã hóa đơn | **tick** | Hóa đơn điện tử |
-     | Cục Thuế đã nhận không mã | **tick** | Hóa đơn điện tử |
-
-     Xong thì bỏ tick ô ủy nhiệm. Hóa đơn ủy nhiệm ghi chung sheet mua vào, cột trạng thái có "(ủy nhiệm)".
-   - **Bán ra**: để mặc định (Tất cả), chỉ nhập ngày → Tìm kiếm → tải tab Hóa đơn điện tử (bỏ qua tab Máy tính tiền để tránh treo; tải tay bằng chế độ thủ công nếu cần).
-     *(Lưu ý: phần Hóa đơn máy tính tiền được bỏ qua hoàn toàn ở chế độ tự động; bạn dùng chế độ thủ công mục 2 để tải tay nếu cần).*
+     | Cục Thuế đã nhận hóa đơn có mã khởi tạo từ máy tính tiền | không tick | Hóa đơn có mã khởi tạo từ máy tính tiền |
+   - **Bán ra**: để mặc định (Tất cả), chỉ nhập ngày → Tìm kiếm → tải tab Hóa đơn điện tử.
+   - **Tải riêng máy tính tiền**: chọn **mục 4: Bán ra (Máy tính tiền)** hoặc **mục 5: Mua vào (Máy tính tiền)** (chỉ tải tab Hóa đơn có mã khởi tạo từ máy tính tiền).
    - Cổng thuế chỉ làm mới **tab con đang mở** khi bấm Tìm kiếm, nên tool luôn mở tab trước rồi mới tìm.
    - Chọn 50 dòng/trang khi có hơn 15 kết quả.
 4. Xong thì tool tự xuất bảng kê.
